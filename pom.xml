@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>cassava</groupId>
     <artifactId>cassava</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
 
     <packaging>jar</packaging>
     <dependencies>
@@ -52,7 +52,4 @@
         </plugins>
     </build>
 
-    <!--<build>-->
-        <!--<finalName></finalName>-->
-    <!--</build>-->
 </project>
