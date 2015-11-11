@@ -29,10 +29,6 @@ public class MapperTest {
         mapper = new Mapper();
     }
 
-
-    private static final String TEST_STRING =
-            "name,position,surname,inttest,datetest,age\ntest1,positiontest,surname,1,2015-11-02,10\ntest2,positiontest,surname,1,2015-11-02,10";
-
     @Test
     public void testHeaderMappingReturningIterator() {
         String headersAndData = "name,position,surname,inttest,datetest,age\ntest1,positiontest,surname,1,2015-11-02,10";
@@ -147,7 +143,6 @@ public class MapperTest {
         assertTrue(!results.isEmpty());
         assertTrue(results.size() == 1);
     }
-
 
 
 }

@@ -33,9 +33,8 @@ public class BigDecimalTypeMapper implements TypeMapper {
 
     /**
      * Constructs a new <code>BigDecimalTypeMapper</code>.<br>
-     * If no format is given, the default format (see {@link #getDefaultFormat()}) is used.
+     * If no format is given, the default format is used.
      *
-     * @param configuration the configuration
      * @throws ConversionException if the given format is not valid.
      */
     public BigDecimalTypeMapper() {
@@ -59,7 +58,7 @@ public class BigDecimalTypeMapper implements TypeMapper {
             if (result instanceof BigDecimal) {
                 return (BigDecimal) result;
             } else {
-                return new BigDecimal(((Double) result).doubleValue()).setScale(this.decimalFormat
+                return new BigDecimal(((Double) result)).setScale(this.decimalFormat
                         .getMaximumFractionDigits(), BigDecimal.ROUND_HALF_UP);
             }
         } catch (ParseException e) {
