@@ -2,15 +2,20 @@ package cassava.csv.core.typemappers;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 /**
- * Created by andrew on 02/11/15.
+ * @author Andrew Vella
+ * @since 02/11/15.
  */
 public class LocalDateTypeMapper implements TypeMapper {
 
     @Override
     public Object fromString(String value) {
-        return LocalDate.parse(value, DateTimeFormatter.ISO_DATE);
+        if(Optional.ofNullable(value).isPresent() && !value.isEmpty()) {
+            return LocalDate.parse(value, DateTimeFormatter.ISO_DATE);
+        }
+        return null;
     }
 
     @Override

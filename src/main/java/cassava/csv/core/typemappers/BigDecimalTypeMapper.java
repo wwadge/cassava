@@ -1,8 +1,5 @@
 package cassava.csv.core.typemappers;
 
-/**
- * Created by andrew on 02/11/15.
- */
 
 import cassava.csv.core.exceptions.ConversionException;
 
@@ -11,6 +8,7 @@ import java.text.DecimalFormat;
 import java.text.FieldPosition;
 import java.text.ParseException;
 import java.util.Locale;
+import java.util.Optional;
 
 /**
  * Converter for <code>BigDecimal</code> objects.<br>
@@ -50,7 +48,7 @@ public class BigDecimalTypeMapper implements TypeMapper {
      * {@inheritDoc}
      */
     public final synchronized BigDecimal fromString(String value) {
-        if (value == null || value.length() == 0) {
+        if (!Optional.ofNullable(value).isPresent() || value.isEmpty()) {
             return null;
         }
         try {

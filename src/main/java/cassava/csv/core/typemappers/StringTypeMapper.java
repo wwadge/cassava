@@ -1,7 +1,8 @@
 package cassava.csv.core.typemappers;
 
 /**
- * Created by andrew on 02/11/15.
+ * @author Andrew Vella
+ * @since 04/11/15.
  */
 public class StringTypeMapper implements TypeMapper {
 

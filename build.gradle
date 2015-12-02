@@ -1,5 +1,5 @@
 group 'io.cassava'
-version '1.0.1'
+version '1.0.3'
 
 
 apply plugin: 'maven'
@@ -31,7 +31,7 @@ dependencies {
 
 jar {
     baseName = 'cassava'
-    version =  '1.0.1'
+    version =  '1.0.3'
 }
 
 task wrapper(type: Wrapper) {

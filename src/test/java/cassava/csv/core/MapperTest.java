@@ -1,6 +1,6 @@
 package cassava.csv.core;
 
-import cassava.csv.core.objects.TestClass;
+import cassava.csv.core.objects.*;
 import cassava.csv.core.typemappers.LocalDateTypeMapper;
 import org.junit.Before;
 import org.junit.Test;
@@ -134,7 +134,7 @@ public class MapperTest {
 
 
     @Test
-    public void testMappingWithDifferetDelimiter() {
+    public void testMappingWithDifferentDelimiter() {
         String headersAndData = "name|position|surname|inttest|datetest|age\ntest1|positiontest|surname|1|2015-11-02|10";
         StringReader reader = new StringReader(headersAndData);
         mapper = new Mapper("|");
@@ -145,4 +145,67 @@ public class MapperTest {
     }
 
 
+    @Test
+    public void testMappingWithSameHeader() {
+        String headersAndData = "name,position,surname,inttest,datetest,age\ntest1,positiontest,surname,1,2015-11-02,10";
+        StringReader reader = new StringReader(headersAndData);
+        List<TestClassSameHeader> results = new ArrayList<>();
+        mapper.map(reader, TestClassSameHeader.class, false,results::add);
+        assertTrue(!results.isEmpty());
+        assertTrue(results.size() == 1);
+    }
+    @Test
+    public void testMappingWithList() {
+        String headersAndData = "name,position,surname,inttest,datetest,age\ntest1,positiontest,surname,1,2015-11-02,10";
+        StringReader reader = new StringReader(headersAndData);
+        List<TestClassWithList> results = new ArrayList<>();
+        mapper.map(reader, TestClassWithList.class, false,results::add);
+        assertTrue(!results.isEmpty());
+        assertTrue(results.size() == 1);
+        assertTrue(!results.stream().findFirst().get().getSubClassList().isEmpty());
+    }
+
+
+    @Test
+    public void testMappingWithFunctionForMapping() {
+
+        String headersAndData = "name,position,surname,inttest,datetest,age,flag\ntest1,positiontest,surname,1,2015-11-02,10,true" +
+                "\ntest2,positiontest,surname,1,2015-11-02,10,false";
+        StringReader reader = new StringReader(headersAndData);
+        List<Object> results = new ArrayList<>();
+        mapper.map(reader, Object.class, false, results::add, csvDataFields -> {
+            for(CsvDataField csvDataField : csvDataFields) {
+                if(csvDataField.getHeaderName()!= null && !csvDataField.getHeaderName().isEmpty() && csvDataField.getHeaderName().equals("flag") && Boolean.valueOf(csvDataField.getFieldValue())) {
+                    return TestClassBWithFlag.class;
+                }
+            }
+            return TestClassB.class;
+        });
+        assertTrue(!results.isEmpty());
+
+        boolean objectAFound = false;
+        boolean objectBFound = false;
+        for(Object result : results) {
+            if(result instanceof TestClassB) {
+                objectAFound = true;
+            }
+            if(result instanceof TestClassBWithFlag) {
+                objectBFound = true;
+            }
+        }
+        assertTrue(objectAFound);
+        assertTrue(objectBFound);
+    }
+
+
+    @Test
+    public void testMappingWithEmptyValues() {
+
+        String headersAndData = "name,position,surname,inttest,datetest,age,flag\n,,,,,,,,,,,,,,,,,,";
+        StringReader reader = new StringReader(headersAndData);
+        List<TestClass> results = new ArrayList<>();
+        mapper.map(reader, TestClass.class, false,results::add);
+        assertTrue(!results.isEmpty());
+        assertTrue(results.size() == 1);
+    }
 }

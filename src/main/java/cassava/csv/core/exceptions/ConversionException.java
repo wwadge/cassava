@@ -1,7 +1,8 @@
 package cassava.csv.core.exceptions;
 
 /**
- * Created by andrew on 02/11/15.
+ * @author Andrew Vella
+ * @since 02/11/15.
  */
 public class ConversionException extends RuntimeException {
 

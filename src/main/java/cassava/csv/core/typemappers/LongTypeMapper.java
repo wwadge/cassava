@@ -2,14 +2,17 @@ package cassava.csv.core.typemappers;
 
 import cassava.csv.core.exceptions.ConversionException;
 
+import java.util.Optional;
+
 /**
- * Created by andrew on 02/11/15.
+ * @author Andrew Vella
+ * @since 04/11/15.
  */
 public class LongTypeMapper implements TypeMapper{
 
     @Override
     public Long fromString(String value) {
-        if (value == null || value.length() == 0) {
+        if (!Optional.ofNullable(value).isPresent() || value.isEmpty()) {
             return null;
         }
         try {

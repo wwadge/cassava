@@ -1,11 +1,11 @@
 package cassava.csv.core;
 
-import lombok.Setter;
-import org.apache.commons.lang3.reflect.FieldUtils;
 import cassava.csv.core.exceptions.ConfigurationException;
 import cassava.csv.core.exceptions.ConversionException;
 import cassava.csv.core.typemappers.CustomTypeMapper;
 import cassava.csv.core.typemappers.TypeMapper;
+import lombok.Setter;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.reflections.Reflections;
 import org.reflections.util.ClasspathHelper;
 
@@ -15,6 +15,7 @@ import java.io.Reader;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * @author Andrew Vella
@@ -75,6 +76,8 @@ public class Mapper {
         }
     }
 
+
+
     /**
      *
      * @param reader Reader from which to read data
@@ -90,6 +93,10 @@ public class Mapper {
         return results.iterator();
     }
 
+    public <T> void map(Reader reader, Class<T> classToMap, boolean ignoreHeaders, Consumer<T> function) throws ConversionException {
+        map(reader, classToMap, ignoreHeaders, function, csvDataField -> classToMap);
+    }
+
     /**
      *
      * @param reader Reader from which to read data
@@ -99,9 +106,9 @@ public class Mapper {
      * @param <T> Type of class for classToMap
      * @throws ConversionException
      */
-    public <T> void map(Reader reader, Class<T> classToMap, boolean ignoreHeaders, Consumer<T> function) throws ConversionException {
+    public <T> void map(Reader reader, Class<T> classToMap, boolean ignoreHeaders, Consumer<T> function, Function<List<CsvDataField>,Class> customMappingFunction) throws ConversionException {
 
-        if (!Optional.ofNullable(MapperFactory.knownAnnotatedClasses.get(classToMap)).isPresent()) {
+        if (!classToMap.getSimpleName().equals(Object.class.getSimpleName()) && !Optional.ofNullable(MapperFactory.knownAnnotatedClasses.get(classToMap)).isPresent()) {
             throw new ConversionException("Unknown class. Please annotate with @CsvType");
         }
 
@@ -112,13 +119,13 @@ public class Mapper {
 
             while ((line =  bufferedReader.readLine()) != null) {
                 lineNo++;
-                String[] values = line.split(delimiter);
+                String[] values = line.split(delimiter,-1);
                 if (lineNo == 0 & !ignoreHeaders) {
                     //Extract a map of position / header names
                     headers = extractHeaders(values,headers);
                 } else {
                     //map values to pojos
-                    function.accept(MapperFactory.mapLineValues(classToMap, values, headers));
+                    function.accept(MapperFactory.mapLineValues(customMappingFunction, values, headers));
                 }
             }
 
