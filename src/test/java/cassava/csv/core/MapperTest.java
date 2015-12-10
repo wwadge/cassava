@@ -208,4 +208,15 @@ public class MapperTest {
         assertTrue(!results.isEmpty());
         assertTrue(results.size() == 1);
     }
+
+
+    @Test
+    public void testMapPopulation() {
+        String headersAndData = "age,[flag]\n1,test";
+        StringReader reader = new StringReader(headersAndData);
+        List<TestClassWithMap> results = new ArrayList<>();
+        mapper.map(reader, TestClassWithMap.class, false,results::add);
+        assertTrue(!results.isEmpty());
+        assertTrue(results.size() == 1);
+    }
 }

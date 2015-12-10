@@ -8,6 +8,8 @@ import org.springframework.util.ReflectionUtils;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Andrew Vella
@@ -16,6 +18,8 @@ import java.util.function.Function;
 public class MapperFactory {
 
     protected static Map<Class, Class<? extends TypeMapper>> typeMappers = new HashMap<>();
+
+    private static String MAP_KEY_REGEX = "\\[(.*?)\\]";
 
     protected static Map<Class, List<Field>> knownAnnotatedClasses = new HashMap<>();
 
@@ -76,7 +80,7 @@ public class MapperFactory {
             throw new ConversionException("Unknown field mapping for Class:" + classType.getSimpleName());
         }
 
-        if(!csvDataField.getFieldValue().isEmpty()) {
+        if(Optional.ofNullable(csvDataField.getFieldValue()).isPresent() && !csvDataField.getFieldValue().isEmpty()) {
             List<Field> embeddedFields = new ArrayList<>();
             for (Field field : fields) {
                 CsvField csvFieldAnnotation = field.getDeclaredAnnotation(CsvField.class);
@@ -100,6 +104,37 @@ public class MapperFactory {
         }
        return instanceToPopulate;
     }
+
+
+    private static void populateMapElement(Field field, CsvDataField csvDataField, Object instanceToPopulate) throws ConversionException {
+
+        if(Optional.ofNullable(csvDataField.getHeaderName()).isPresent()
+                && csvDataField.getHeaderName().matches(MAP_KEY_REGEX)) {
+
+            try {
+                ReflectionUtils.makeAccessible(field);
+                Map embeddedObject = (Map) field.get(instanceToPopulate);
+                if (embeddedObject == null) {
+                    embeddedObject = new HashMap<>();
+                }
+                Matcher matcher = Pattern.compile(MAP_KEY_REGEX).matcher(csvDataField.getHeaderName());
+                if(matcher.find()) {
+                    String mapKey = matcher.group(1);
+                    embeddedObject.put(mapKey,csvDataField.getFieldValue());
+
+                    if (!embeddedObject.isEmpty()) {
+                        ReflectionUtils.makeAccessible(field);
+                        ReflectionUtils.setField(field, instanceToPopulate, embeddedObject);
+                    }
+                }
+
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
 
     private static void populateListElement(Field field, CsvDataField csvDataField, Object instanceToPopulate) throws ConversionException {
 
@@ -139,7 +174,10 @@ public class MapperFactory {
             Class<?> fieldClassType = field.getType();
             if (Collection.class.isAssignableFrom(fieldClassType)) {
                 populateListElement(field, csvDataField, instanceToPopulate);
-            } else {
+            } else if(Map.class.equals(fieldClassType)) {
+                populateMapElement(field,csvDataField,instanceToPopulate);
+
+            } else  {
                 try {
                     ReflectionUtils.makeAccessible(field);
                     //Get the instances of the embedded object in the original parent class (instanceToPopulate)
