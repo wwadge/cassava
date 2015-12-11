@@ -50,7 +50,11 @@ public class Mapper {
         Set<Class<?>> annotatedClasses = reflections.getTypesAnnotatedWith(CsvType.class);
         for (Class<?> clazz : annotatedClasses) {
             List<Field> fields = FieldUtils.getFieldsListWithAnnotation(clazz, CsvField.class);
-            MapperFactory.knownAnnotatedClasses.put(clazz, fields);
+            CsvReader.knownAnnotatedClasses.put(clazz, fields);
+            List<Field> allFields = FieldUtils.getAllFieldsList(clazz);
+            List<Field> fieldsToExclude = FieldUtils.getFieldsListWithAnnotation(clazz, CsvIgnore.class);
+            allFields.removeAll(fieldsToExclude);
+            CsvWriter.knownAnnotatedClasses.put(clazz,allFields);
         }
     }
 
@@ -65,9 +69,10 @@ public class Mapper {
             try {
                 if(!clazz.isInterface()) {
                     TypeMapper mapper = clazz.newInstance();
-                    if(!MapperFactory.typeMappers.containsKey(mapper.getReturnType())
-                            || (MapperFactory.typeMappers.containsKey(mapper.getReturnType()) && clazz.getSuperclass() == CustomTypeMapper.class))
-                    MapperFactory.typeMappers.put(mapper.getReturnType(), clazz);
+                    if(!CsvReader.typeMappers.containsKey(mapper.getReturnType())
+                            || (CsvReader.typeMappers.containsKey(mapper.getReturnType()) && clazz.getSuperclass() == CustomTypeMapper.class))
+                    CsvReader.typeMappers.put(mapper.getReturnType(), clazz);
+                    CsvWriter.typeMappers.put(mapper.getReturnType(),clazz);
                 }
 
             } catch (InstantiationException | IllegalAccessException e) {
@@ -79,7 +84,7 @@ public class Mapper {
 
 
     /**
-     *
+     * Maps data from the given reader to an Iterator of specified Class Type.
      * @param reader Reader from which to read data
      * @param classToMap Class to which to map data
      * @param ignoreHeaders Boolean determining if headers should be ignored. Should be set to true if positions are being used.
@@ -93,6 +98,15 @@ public class Mapper {
         return results.iterator();
     }
 
+    /**
+     *
+     * @param reader Reader from which to read data
+     * @param classToMap Class to which to map data
+     * @param ignoreHeaders Boolean determining if headers should be ignored. Should be set to true if positions are being used.
+     * @param function Function which to action upon the computed result
+     * @param <T>
+     * @throws ConversionException
+     */
     public <T> void map(Reader reader, Class<T> classToMap, boolean ignoreHeaders, Consumer<T> function) throws ConversionException {
         map(reader, classToMap, ignoreHeaders, function, csvDataField -> classToMap);
     }
@@ -108,7 +122,7 @@ public class Mapper {
      */
     public <T> void map(Reader reader, Class<T> classToMap, boolean ignoreHeaders, Consumer<T> function, Function<List<CsvDataField>,Class> customMappingFunction) throws ConversionException {
 
-        if (!classToMap.getSimpleName().equals(Object.class.getSimpleName()) && !Optional.ofNullable(MapperFactory.knownAnnotatedClasses.get(classToMap)).isPresent()) {
+        if (!classToMap.getSimpleName().equals(Object.class.getSimpleName()) && !Optional.ofNullable(CsvReader.knownAnnotatedClasses.get(classToMap)).isPresent()) {
             throw new ConversionException("Unknown class. Please annotate with @CsvType");
         }
 
@@ -125,7 +139,7 @@ public class Mapper {
                     headers = extractHeaders(values,headers);
                 } else {
                     //map values to pojos
-                    function.accept(MapperFactory.mapLineValues(customMappingFunction, values, headers));
+                    function.accept(CsvReader.mapLineValues(customMappingFunction, values, headers));
                 }
             }
 
@@ -133,6 +147,31 @@ public class Mapper {
             throw new ConversionException("Unable to read from Reader",e);
         }
     }
+
+    /**
+     * Actions a custom function on the data output by the CSV converted string.
+     * @param objectToMap Pojo which needs to be converted to CSV String
+     * @param populateEmptyPlaceHolders Flag indicating whether to return empty place holders when Collections/Maps are null
+     * @param function Custom function to action upon the computed result
+     */
+    public void mapToString(Object objectToMap, boolean populateEmptyPlaceHolders, Consumer<String> function) {
+        String result = mapToString(objectToMap,populateEmptyPlaceHolders);
+        function.accept(result);
+    }
+
+    /**
+     * Extracts a CSV String from the Pojo.
+     * @param objectToMap Pojo to be converted
+     * @param populateEmptyPlaceHolders Flag indicating whether to return empty place holders when Collections/Maps are null
+     * @return String
+     * @throws ConversionException
+     */
+    public String mapToString(Object objectToMap, boolean populateEmptyPlaceHolders) throws ConversionException {
+        return CsvWriter.mapObject(objectToMap,populateEmptyPlaceHolders);
+    }
+
+
+
 
     /**
      * Populate a map between the header position and the actual header name

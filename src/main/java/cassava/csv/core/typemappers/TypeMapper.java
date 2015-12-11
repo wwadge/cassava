@@ -7,4 +7,5 @@ package cassava.csv.core.typemappers;
 public interface TypeMapper {
     Object fromString(String value);
     Class getReturnType();
+    String toString(Object object);
 }

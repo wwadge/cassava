@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
  * @author Andrew Vella
  * @since 03/11/15.
  */
-public class MapperFactory {
+public class CsvReader {
 
     protected static Map<Class, Class<? extends TypeMapper>> typeMappers = new HashMap<>();
 

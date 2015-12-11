@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -219,4 +220,31 @@ public class MapperTest {
         assertTrue(!results.isEmpty());
         assertTrue(results.size() == 1);
     }
+
+    @Test
+    public void testWriterWithIgnore() {
+        TestClass testClass = new TestClass();
+        testClass.setTest("testName");
+        testClass.setTest2("testSurname");
+        String result = mapper.mapToString(testClass,true);
+        assertTrue(result.contains("testName"));
+        assertFalse(result.contains("testSurname"));
+    }
+
+    @Test
+    public void testWriterWithoutIgnore() {
+        TestClassB testClass = new TestClassB();
+        testClass.setSurname("testSurname");
+        String result = mapper.mapToString(testClass,true);
+        assertTrue(result.contains("testSurname"));
+    }
+
+
+
+
+
+
+
+
+
 }

@@ -22,4 +22,12 @@ public class LocalDateTypeMapper implements TypeMapper {
     public Class getReturnType() {
         return LocalDate.class;
     }
+
+    @Override
+    public String toString(Object object) {
+        if(Optional.ofNullable(object).isPresent()) {
+            return ((LocalDate)object).format(DateTimeFormatter.ISO_DATE);
+        }
+        return null;
+    }
 }

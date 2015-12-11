@@ -1,5 +1,5 @@
 group 'io.cassava'
-version '1.0.3'
+version '1.0.5'
 
 
 apply plugin: 'maven'
@@ -9,11 +9,8 @@ buildscript {
     repositories {
         mavenCentral()
     }
-//    dependencies {
-//        classpath 'com.adaptc.gradle:nexus-workflow:0.6'
-//    }
+
 }
-//apply plugin: 'nexus-workflow'
 
 sourceCompatibility = 1.8
 
@@ -31,7 +28,7 @@ dependencies {
 
 jar {
     baseName = 'cassava'
-    version =  '1.0.3'
+    version =  '1.0.5'
 }
 
 task wrapper(type: Wrapper) {

@@ -15,4 +15,9 @@ public class StringTypeMapper implements TypeMapper {
     public Class getReturnType() {
         return String.class;
     }
+
+    @Override
+    public String toString(Object object) {
+        return (String) object;
+    }
 }

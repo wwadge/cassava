@@ -28,4 +28,12 @@ public class IntegerTypeMapper implements TypeMapper {
     public Class getReturnType() {
         return Integer.class;
     }
+
+    @Override
+    public String toString(Object object) {
+        if(!Optional.ofNullable(object).isPresent()) {
+            return null;
+        }
+        return Integer.toString((Integer)object);
+    }
 }

@@ -29,4 +29,12 @@ public class LongTypeMapper implements TypeMapper{
     public Class getReturnType() {
         return Long.class;
     }
+
+    @Override
+    public String toString(Object object) {
+        if(!Optional.ofNullable(object).isPresent()) {
+            return null;
+        }
+        return Long.toString((Long)object);
+    }
 }

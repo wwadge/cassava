@@ -1,6 +1,7 @@
 package cassava.csv.core.objects;
 
 import cassava.csv.core.CsvField;
+import cassava.csv.core.CsvIgnore;
 import cassava.csv.core.CsvType;
 import lombok.Data;
 
@@ -17,6 +18,7 @@ public class TestClass {
     private String test;
 
     @CsvField(columnPosition = 1)
+    @CsvIgnore
     private String test2;
 
     @CsvField()
