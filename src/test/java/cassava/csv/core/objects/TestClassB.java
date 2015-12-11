@@ -12,6 +12,6 @@ import lombok.Data;
 @Data
 public class TestClassB {
 
-    @CsvField(headerName = "surname")
+    @CsvField(headerName = "surname", outputPosition = 1)
     private String surname;
 }

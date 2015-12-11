@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
  */
 public class CsvReader {
 
-    protected static Map<Class, Class<? extends TypeMapper>> typeMappers = new HashMap<>();
+    protected static Map<Class, TypeMapper> typeMappers = new HashMap<>();
 
     private static String MAP_KEY_REGEX = "\\[(.*?)\\]";
 
@@ -200,17 +200,12 @@ public class CsvReader {
         Object mappedValue;
         Class fieldType = field.getType();
         //Attempt to get from cached mappers
-        Class<? extends TypeMapper> mapperClass = typeMappers.get(fieldType);
+        TypeMapper mapper = typeMappers.get(fieldType);
         //Use specified
-        if (mapperClass == null) {
+        if (mapper == null) {
             throw new ConversionException("Unknown Type :" + fieldType);
         }
-        try {
-            TypeMapper mapper = mapperClass.newInstance();
-            mappedValue = mapper.fromString(csvDataField.getFieldValue());
-        } catch (InstantiationException | IllegalAccessException e) {
-            throw new ConversionException("Unable to map value :" + csvDataField.getFieldValue() + " to field type " + fieldType.getSimpleName() + "using TypeMapper: " + mapperClass.getSimpleName());
-        }
+        mappedValue = mapper.fromString(csvDataField.getFieldValue());
         ReflectionUtils.makeAccessible(field);
         ReflectionUtils.setField(field, instance, mappedValue);
     }

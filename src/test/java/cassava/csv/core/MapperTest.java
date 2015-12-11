@@ -1,5 +1,6 @@
 package cassava.csv.core;
 
+import cassava.csv.core.exceptions.ConversionException;
 import cassava.csv.core.objects.*;
 import cassava.csv.core.typemappers.LocalDateTypeMapper;
 import org.junit.Before;
@@ -12,9 +13,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Andrew Vella
@@ -221,23 +220,61 @@ public class MapperTest {
         assertTrue(results.size() == 1);
     }
 
-    @Test
-    public void testWriterWithIgnore() {
+    @Test(expected = ConversionException.class)
+    public void testWriterWithoutPositionAnnotation() {
         TestClass testClass = new TestClass();
         testClass.setTest("testName");
         testClass.setTest2("testSurname");
-        String result = mapper.mapToString(testClass,true);
-        assertTrue(result.contains("testName"));
-        assertFalse(result.contains("testSurname"));
+        mapper.mapToString(testClass,true);
     }
 
     @Test
-    public void testWriterWithoutIgnore() {
+    public void testWriterWithProperAnnotation() {
         TestClassB testClass = new TestClassB();
         testClass.setSurname("testSurname");
         String result = mapper.mapToString(testClass,true);
         assertTrue(result.contains("testSurname"));
     }
+
+    @Test
+    public void testWriterWithOrder() {
+        TestWriteClass testClass = new TestWriteClass();
+        testClass.setSurname("testSurname");
+        testClass.setName("testName");
+        testClass.setAge(10);
+        String result = mapper.mapToString(testClass,true);
+        assertNotNull(result);
+        String [] testArray = result.split(",");
+        assertTrue(testArray.length == 3);
+        assertEquals(testArray[0],"testName");
+        assertEquals(testArray[1],"10");
+        assertEquals(testArray[2],"testSurname");
+    }
+
+
+    @Test
+    public void testWriterWithOrderWitEembedded() {
+        TestWriteClassB testClass = new TestWriteClassB();
+        testClass.setSurname("testSurname");
+        testClass.setName("testName");
+        TestClassBWithFlag testClassBWithFlag = new TestClassBWithFlag();
+        testClassBWithFlag.setAge(11);
+        testClassBWithFlag.setSurname("testSurname2");
+        testClass.setTestClassBWithFlag(testClassBWithFlag);
+        String result = mapper.mapToString(testClass,true);
+        assertNotNull(result);
+        String [] testArray = result.split(",");
+        assertTrue(testArray.length == 4);
+        assertEquals(testArray[0],"testName");
+        assertEquals(testArray[1],"11");
+        assertEquals(testArray[2],"testSurname2");
+        assertEquals(testArray[3],"testSurname");
+    }
+
+
+
+
+
 
 
 

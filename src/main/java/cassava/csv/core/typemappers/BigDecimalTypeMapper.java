@@ -27,36 +27,28 @@ public class BigDecimalTypeMapper implements TypeMapper {
 
     private static final FieldPosition FIELD_POSITION = new FieldPosition(0);
 
-    private final DecimalFormat decimalFormat;
 
-    /**
-     * Constructs a new <code>BigDecimalTypeMapper</code>.<br>
-     * If no format is given, the default format is used.
-     *
-     * @throws ConversionException if the given format is not valid.
-     */
-    public BigDecimalTypeMapper() {
+    private DecimalFormat getDecimalFormat() {
         try {
-            this.decimalFormat = new DecimalFormat();
-            this.decimalFormat.setParseBigDecimal(true);
+            DecimalFormat decimalFormat = new DecimalFormat();
+            decimalFormat.setParseBigDecimal(true);
+            return decimalFormat;
         } catch (Exception e) {
             throw new ConversionException("Could not create a " + this.getClass().getName(), e);
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
+
     public final synchronized BigDecimal fromString(String value) {
         if (!Optional.ofNullable(value).isPresent() || value.isEmpty()) {
             return null;
         }
         try {
-            Object result = this.decimalFormat.parseObject(value);
+            Object result = getDecimalFormat().parseObject(value);
             if (result instanceof BigDecimal) {
                 return (BigDecimal) result;
             } else {
-                return new BigDecimal(((Double) result)).setScale(this.decimalFormat
+                return new BigDecimal(((Double) result)).setScale(getDecimalFormat()
                         .getMaximumFractionDigits(), BigDecimal.ROUND_HALF_UP);
             }
         } catch (ParseException e) {
@@ -64,14 +56,12 @@ public class BigDecimalTypeMapper implements TypeMapper {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
+
     public final synchronized String toString(Object value) {
         if (value == null) {
             return null;
         }
-        return this.decimalFormat.format(value, new StringBuffer(), FIELD_POSITION).toString();
+        return getDecimalFormat().format(value, new StringBuffer(), FIELD_POSITION).toString();
     }
 
     @Override

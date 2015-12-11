@@ -15,5 +15,6 @@ public @interface CsvField {
 
     String headerName() default "";
     int columnPosition() default -1;
+    int outputPosition() default -1;
 
 }

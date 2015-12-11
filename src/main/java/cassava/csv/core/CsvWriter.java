@@ -1,5 +1,6 @@
 package cassava.csv.core;
 
+import cassava.csv.core.exceptions.ConfigurationException;
 import cassava.csv.core.exceptions.ConversionException;
 import cassava.csv.core.exceptions.NoTypeMapperFoundException;
 import cassava.csv.core.typemappers.TypeMapper;
@@ -14,7 +15,7 @@ import java.util.*;
  */
 public class CsvWriter {
 
-    protected static Map<Class, Class<? extends TypeMapper>> typeMappers = new HashMap<>();
+    protected static Map<Class, TypeMapper> typeMappers = new HashMap<>();
     protected static Map<Class, List<Field>> knownAnnotatedClasses = new HashMap<>();
 
     private static final String delimiter = ",";
@@ -29,6 +30,15 @@ public class CsvWriter {
                 //If unable to map using type mappers extract each field and begin extractring strings.
                 StringBuilder stringBuilder = new StringBuilder();
                 List<Field> fields = knownAnnotatedClasses.get(objectToMap.getClass());
+                validateFieldAnnotations(fields);
+                Collections.sort(fields, (o1, o2) -> {
+                    CsvField field1 = o1.getAnnotation(CsvField.class);
+                    CsvField field2 = o2.getAnnotation(CsvField.class);
+                    if(field1.outputPosition() == field2.outputPosition())
+                        return 0;
+                    return field1.outputPosition() < field2.outputPosition() ? -1 : 1;
+                });
+
                 Iterator<Field> fieldIterator = fields.iterator();
                 while (fieldIterator.hasNext()) {
                     Field field = fieldIterator.next();
@@ -42,6 +52,15 @@ public class CsvWriter {
         } catch (Throwable e) {
             throw new ConversionException("Unable to convert requested object", e);
         }
+    }
+
+    private static void validateFieldAnnotations(List<Field> fields) throws ConfigurationException {
+
+        fields.forEach(field -> {
+            if(field.getAnnotation(CsvField.class).outputPosition() == -1) {
+                throw new ConfigurationException("Field with name " + field.getName() + " has incorrect annotation");
+            }
+        });
     }
 
     /**
@@ -122,17 +141,12 @@ public class CsvWriter {
 
     private static String extractValueFromTypeMappers(Object object) throws NoTypeMapperFoundException {
         if (Optional.ofNullable(object).isPresent()) {
-            Class<? extends TypeMapper> mapperClass = typeMappers.get(object.getClass());
+            TypeMapper mapper = typeMappers.get(object.getClass());
             //Use specified
-            if (mapperClass == null) {
+            if (mapper == null) {
                 throw new NoTypeMapperFoundException("Unknown Type :" + object.getClass());
             }
-            try {
-                TypeMapper mapper = mapperClass.newInstance();
-                return mapper.toString(object);
-            } catch (InstantiationException | IllegalAccessException e) {
-                throw new ConversionException("Unable to map value :" + object + " using TypeMapper: " + mapperClass.getSimpleName());
-            }
+            return mapper.toString(object);
         }
         return "";
     }

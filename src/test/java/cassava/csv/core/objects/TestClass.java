@@ -1,7 +1,6 @@
 package cassava.csv.core.objects;
 
 import cassava.csv.core.CsvField;
-import cassava.csv.core.CsvIgnore;
 import cassava.csv.core.CsvType;
 import lombok.Data;
 
@@ -14,11 +13,10 @@ import java.time.LocalDate;
 @Data
 public class TestClass {
 
-    @CsvField(headerName = "name")
+    @CsvField(headerName = "name", outputPosition = 1)
     private String test;
 
-    @CsvField(columnPosition = 1)
-    @CsvIgnore
+    @CsvField(columnPosition = 1, outputPosition = 2)
     private String test2;
 
     @CsvField()
