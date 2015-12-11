@@ -59,7 +59,7 @@ public class Mapper {
      * Detects and caches all classes annotated with the @CsvType annotation using the Reflections context.
      *
      */
-    public Map<Class, List<Field>> getAnnotatedClassesAndFields() {
+    private Map<Class, List<Field>> getAnnotatedClassesAndFields() {
         HashMap<Class, List<Field>> results = new HashMap<>();
         Set<Class<?>> annotatedClasses = reflections.getTypesAnnotatedWith(CsvType.class);
         for (Class<?> clazz : annotatedClasses) {
@@ -69,21 +69,31 @@ public class Mapper {
         return results;
     }
 
+
+    private Map<Class,TypeMapper> getTypeMappers() throws ConfigurationException    {
+        Map<Class, TypeMapper> defaultTypeMappers = getDefaultTypeMappers();
+        Map<Class, TypeMapper> customTypeMappers = getCustomTypeMappers();
+        Map<Class, TypeMapper> aggregatedTypeMappers = new HashMap<>();
+        aggregatedTypeMappers.putAll(defaultTypeMappers);
+        if(customTypeMappers != null) {
+            aggregatedTypeMappers.putAll(customTypeMappers);
+        }
+        return aggregatedTypeMappers;
+    }
     /**
      * Detects and caches all classes which implement the TypeMapper interface.
      *
      * @throws ConfigurationException
      */
-    public Map<Class, TypeMapper> getTypeMappers() throws ConfigurationException {
+    private Map<Class, TypeMapper> getDefaultTypeMappers() throws ConfigurationException {
         Map<Class, TypeMapper> results = new HashMap<>();
 
         Set<Class<? extends TypeMapper>> classes = reflections.getSubTypesOf(TypeMapper.class);
         for (Class<? extends TypeMapper> clazz : classes) {
             try {
-                if (!clazz.isInterface()) {
+                if (!clazz.isInterface() && (clazz.getSuperclass() == null || clazz.getSuperclass() != CustomTypeMapper.class)) {
                     TypeMapper mapper = clazz.newInstance();
-                    if (!results.containsKey(mapper.getReturnType())
-                            || (results.containsKey(mapper.getReturnType()) && clazz.getSuperclass() == CustomTypeMapper.class)) {
+                    if (!results.containsKey(mapper.getReturnType())) {
                         results.put(mapper.getReturnType(), mapper);
                     }
                 }
@@ -93,6 +103,24 @@ public class Mapper {
         }
         return results;
     }
+
+
+    public Map<Class,TypeMapper> getCustomTypeMappers() throws ConfigurationException {
+        Map<Class, TypeMapper> results = new HashMap<>();
+        Set<Class<? extends CustomTypeMapper>> classes = reflections.getSubTypesOf(CustomTypeMapper.class);
+        for (Class<? extends CustomTypeMapper> clazz : classes) {
+            try {
+                TypeMapper mapper = clazz.newInstance();
+                if (!results.containsKey(mapper.getReturnType())) {
+                    results.put(mapper.getReturnType(), mapper);
+                }
+            } catch (InstantiationException | IllegalAccessException e) {
+                throw new ConfigurationException("Unable to configure type mappers", e);
+            }
+        }
+        return results;
+    }
+
 
     /**
      * Maps data from the given reader to an Iterator of specified Class Type.
