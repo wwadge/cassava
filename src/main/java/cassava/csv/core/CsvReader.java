@@ -2,8 +2,8 @@ package cassava.csv.core;
 
 import cassava.csv.core.exceptions.ConversionException;
 import cassava.csv.core.typemappers.TypeMapper;
+import cassava.csv.core.utils.ReflectionUtils;
 import com.google.common.reflect.TypeToken;
-import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 import java.util.*;
@@ -15,15 +15,11 @@ import java.util.regex.Pattern;
  * @author Andrew Vella
  * @since 03/11/15.
  */
-public class CsvReader {
+public class CsvReader extends AbstractCsvMapper {
 
-    protected static Map<Class, TypeMapper> typeMappers = new HashMap<>();
+    private final static String MAP_KEY_REGEX = "\\[(.*?)\\]";
 
-    private static String MAP_KEY_REGEX = "\\[(.*?)\\]";
-
-    protected static Map<Class, List<Field>> knownAnnotatedClasses = new HashMap<>();
-
-    public static <T> T mapLineValues(Function<List<CsvDataField>, Class> functionMap, String[] stringValues, Map<Integer, String> headerMap) {
+    public <T> T mapLineValues(Function<List<CsvDataField>, Class> functionMap, String[] stringValues, Map<Integer, String> headerMap) {
         Object o = null;
         List<CsvDataField> csvDataFieldList = mapCsvDataList(stringValues, headerMap);
         Class classToMapTo = functionMap.apply(csvDataFieldList);
@@ -34,7 +30,7 @@ public class CsvReader {
     }
 
 
-    private static List<CsvDataField> mapCsvDataList(String[] stringValues, Map<Integer, String> headerMap) {
+    private List<CsvDataField> mapCsvDataList(String[] stringValues, Map<Integer, String> headerMap) {
         List<CsvDataField> csvDataFieldList = new ArrayList<>();
         for(Integer key: headerMap.keySet()){
             String value = null;
@@ -47,7 +43,7 @@ public class CsvReader {
         return csvDataFieldList;
     }
 
-    private static Object mapToPojo(Class classType, CsvDataField csvDataField, Object instanceToPopulate) {
+    private Object mapToPojo(Class classType, CsvDataField csvDataField, Object instanceToPopulate) {
 
         Object result;
         //Create  new instance if null
@@ -65,7 +61,7 @@ public class CsvReader {
 
     }
 
-    private static Collection instansiateList(Class classType) {
+    private Collection instansiateList(Class classType) {
         if (List.class.getSimpleName().equals(classType.getSimpleName())) {
             return new ArrayList<>();
         } else if (Set.class.getSimpleName().equals(classType.getSimpleName())) {
@@ -74,9 +70,9 @@ public class CsvReader {
         throw new ConversionException("Unable to create new instance of " + classType.getSimpleName());
     }
 
-    private static Object mapToField(Class classType, CsvDataField csvDataField, Object instanceToPopulate) throws ConversionException {
-        List<Field> fields = knownAnnotatedClasses.get(classType);
-        if(fields == null) {
+    private Object mapToField(Class classType, CsvDataField csvDataField, Object instanceToPopulate) throws ConversionException {
+        List<Field> fields = getKnownAnnotatedClasses().get(classType);
+        if (!Optional.ofNullable(fields).isPresent()) {
             throw new ConversionException("Unknown field mapping for Class:" + classType.getSimpleName());
         }
 
@@ -85,7 +81,7 @@ public class CsvReader {
             for (Field field : fields) {
                 CsvField csvFieldAnnotation = field.getDeclaredAnnotation(CsvField.class);
                 //Check that the field type is a known type. If it isn't store it in a separate list to be processed later.
-                if (!typeMappers.containsKey(field.getType())) {
+                if (!getTypeMappers().containsKey(field.getType())) {
                     embeddedFields.add(field);
                 }
                 //Extract annotation values and attempt to match using either header name or column position
@@ -106,7 +102,7 @@ public class CsvReader {
     }
 
 
-    private static void populateMapElement(Field field, CsvDataField csvDataField, Object instanceToPopulate) throws ConversionException {
+    private void populateMapElement(Field field, CsvDataField csvDataField, Object instanceToPopulate) throws ConversionException {
 
         if(Optional.ofNullable(csvDataField.getHeaderName()).isPresent()
                 && csvDataField.getHeaderName().matches(MAP_KEY_REGEX)) {
@@ -127,16 +123,15 @@ public class CsvReader {
                         ReflectionUtils.setField(field, instanceToPopulate, embeddedObject);
                     }
                 }
-
             } catch (IllegalAccessException e) {
-                e.printStackTrace();
+                throw new ConversionException("Unable to access field", e);
             }
         }
 
     }
 
 
-    private static void populateListElement(Field field, CsvDataField csvDataField, Object instanceToPopulate) throws ConversionException {
+    private void populateListElement(Field field, CsvDataField csvDataField, Object instanceToPopulate) throws ConversionException {
 
         try {
             Class<?> genericTypeClass = TypeToken.of(field.getGenericType()).resolveType(
@@ -169,7 +164,7 @@ public class CsvReader {
 
     }
 
-    private static Object populateEmbeddedField(List<Field> embeddedFields, Object instanceToPopulate, CsvDataField csvDataField) throws ConversionException {
+    private Object populateEmbeddedField(List<Field> embeddedFields, Object instanceToPopulate, CsvDataField csvDataField) throws ConversionException {
         for (Field field : embeddedFields) {
             Class<?> fieldClassType = field.getType();
             if (Collection.class.isAssignableFrom(fieldClassType)) {
@@ -196,11 +191,11 @@ public class CsvReader {
 
     }
 
-    private static void populateValue(Field field, Object instance, CsvDataField csvDataField) throws ConversionException {
+    private void populateValue(Field field, Object instance, CsvDataField csvDataField) throws ConversionException {
         Object mappedValue;
         Class fieldType = field.getType();
         //Attempt to get from cached mappers
-        TypeMapper mapper = typeMappers.get(fieldType);
+        TypeMapper mapper = getTypeMappers().get(fieldType);
         //Use specified
         if (mapper == null) {
             throw new ConversionException("Unknown Type :" + fieldType);

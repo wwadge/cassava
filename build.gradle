@@ -1,16 +1,23 @@
-group 'io.cassava'
-version '1.0.5'
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+}
+
+plugins {
+    id 'nebula.provided-base' version '3.0.3'
+}
 
 
 apply plugin: 'maven'
-apply plugin: 'signing'
+//apply plugin: 'signing'
 apply plugin: 'java'
-buildscript {
-    repositories {
-        mavenCentral()
-    }
+apply plugin: 'nebula.provided-base'
 
-}
+
+group 'io.cassava'
+version '1.0.10'
 
 sourceCompatibility = 1.8
 
@@ -18,21 +25,22 @@ repositories {
     mavenCentral()
 }
 
+
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
     compile ('org.reflections:reflections:0.9.10')
-    compile('org.projectlombok:lombok:1.16.6')
-    compile('org.springframework:spring-core:4.2.2.RELEASE')
-    compile('org.apache.commons:commons-lang3:3.4')
+    compile ('com.google.guava:guava:18.0')
+    provided ('org.javamoney:moneta:1.0')
+    provided ('com.neovisionaries:nv-i18n:1.12')
 }
 
 jar {
     baseName = 'cassava'
-    version =  '1.0.5'
+    version =  '1.0.10'
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.3'
+    gradleVersion = '2.11'
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
@@ -51,42 +59,42 @@ artifacts {
     archives javadocJar
 }
 
-signing {
-    sign configurations.archives
-}
+//signing {
+//    sign configurations.archives
+//}
 
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
-            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                authentication(userName: sonatypeUsername, password: sonatypePassword)
-            }
-
-            pom.project {
-                name 'CaSsaVa'
-                packaging 'jar'
-                description 'CaSsaVa is a library which simplifies CSV parsing by providing annotations for your classes'
-                url 'http://cassava.io'
-                scm {
-                    url 'https://github.com/drewvella/cassava.git'
-                }
-
-                licenses {
-                    license {
-                        name 'The Apache Software License, Version 2.0'
-                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                        distribution 'repo'
-                    }
-                }
-                developers {
-                    developer {
-                        id 'avella'
-                        name 'Andrew Vella'
-                    }
-                }
-            }
-        }
-    }
-}
+//uploadArchives {
+//    repositories {
+//        mavenDeployer {
+//            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+//
+//            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+//                authentication(userName: 'sonatypeUsername', password: 'sonatypePassword')
+//            }
+//
+//            pom.project {
+//                name 'CaSsaVa'
+//                packaging 'jar'
+//                description 'CaSsaVa is a library which simplifies CSV parsing by providing annotations for your classes'
+//                url 'http://cassava.io'
+//                scm {
+//                    url 'https://github.com/drewvella/cassava.git'
+//                }
+//
+//                licenses {
+//                    license {
+//                        name 'The Apache Software License, Version 2.0'
+//                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+//                        distribution 'repo'
+//                    }
+//                }
+//                developers {
+//                    developer {
+//                        id 'avella'
+//                        name 'Andrew Vella'
+//                    }
+//                }
+//            }
+//        }
+//    }
+//}

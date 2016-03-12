@@ -11,7 +11,7 @@ import java.util.Optional;
 public class LocalDateTypeMapper implements TypeMapper {
 
     @Override
-    public Object fromString(String value) {
+    public LocalDate fromString(String value) {
         if(Optional.ofNullable(value).isPresent() && !value.isEmpty()) {
             return LocalDate.parse(value, DateTimeFormatter.ISO_DATE);
         }

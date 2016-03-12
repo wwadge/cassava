@@ -4,7 +4,7 @@ import cassava.csv.core.exceptions.ConfigurationException;
 import cassava.csv.core.exceptions.ConversionException;
 import cassava.csv.core.exceptions.NoTypeMapperFoundException;
 import cassava.csv.core.typemappers.TypeMapper;
-import org.springframework.util.ReflectionUtils;
+import cassava.csv.core.utils.ReflectionUtils;
 
 import java.lang.reflect.Field;
 import java.util.*;
@@ -13,15 +13,9 @@ import java.util.*;
  * @author Andrew Vella
  * @since 11/12/15.
  */
-public class CsvWriter {
+public class CsvWriter extends AbstractCsvMapper {
 
-    protected static Map<Class, TypeMapper> typeMappers = new HashMap<>();
-    protected static Map<Class, List<Field>> knownAnnotatedClasses = new HashMap<>();
-
-    private static final String delimiter = ",";
-
-
-    public static String mapObject(Object objectToMap, boolean emptyPlaceHolders) {
+    public String mapObject(Object objectToMap, boolean emptyPlaceHolders) {
         try {
             //Attempt to map using the known type mappers
             try {
@@ -29,12 +23,12 @@ public class CsvWriter {
             } catch (NoTypeMapperFoundException e) {
                 //If unable to map using type mappers extract each field and begin extractring strings.
                 StringBuilder stringBuilder = new StringBuilder();
-                List<Field> fields = knownAnnotatedClasses.get(objectToMap.getClass());
+                List<Field> fields = getKnownAnnotatedClasses().get(objectToMap.getClass());
                 validateFieldAnnotations(fields);
                 Collections.sort(fields, (o1, o2) -> {
                     CsvField field1 = o1.getAnnotation(CsvField.class);
                     CsvField field2 = o2.getAnnotation(CsvField.class);
-                    if(field1.outputPosition() == field2.outputPosition())
+                    if (field1.outputPosition() == field2.outputPosition())
                         return 0;
                     return field1.outputPosition() < field2.outputPosition() ? -1 : 1;
                 });
@@ -44,7 +38,7 @@ public class CsvWriter {
                     Field field = fieldIterator.next();
                     stringBuilder.append(extractValueFromField(field, objectToMap, emptyPlaceHolders));
                     if (fieldIterator.hasNext()) {
-                        stringBuilder.append(delimiter);
+                        stringBuilder.append(getDelimiter());
                     }
                 }
                 return stringBuilder.toString();
@@ -54,10 +48,10 @@ public class CsvWriter {
         }
     }
 
-    private static void validateFieldAnnotations(List<Field> fields) throws ConfigurationException {
+    private void validateFieldAnnotations(List<Field> fields) throws ConfigurationException {
 
         fields.forEach(field -> {
-            if(field.getAnnotation(CsvField.class).outputPosition() == -1) {
+            if (field.getAnnotation(CsvField.class).outputPosition() == -1) {
                 throw new ConfigurationException("Field with name " + field.getName() + " has incorrect annotation");
             }
         });
@@ -65,11 +59,12 @@ public class CsvWriter {
 
     /**
      * Build a string representation of a map object.
-     * @param object Map Object
+     *
+     * @param object            Map Object
      * @param emptyPlaceHolders Boolean flag determining whether to add [] when a map is empty.
      * @return
      */
-    private static String extractMapValues(Object object, boolean emptyPlaceHolders) {
+    private String extractMapValues(Object object, boolean emptyPlaceHolders) {
         if (!Optional.ofNullable(object).isPresent()) {
             return emptyPlaceHolders ? "[]" : "";
         }
@@ -83,7 +78,7 @@ public class CsvWriter {
             stringBuilder.append(mapObject(iterator.next().getValue(), emptyPlaceHolders));
             stringBuilder.append("]");
             if (iterator.hasNext()) {
-                stringBuilder.append(delimiter);
+                stringBuilder.append(getDelimiter());
             }
         }
         return stringBuilder.toString();
@@ -91,12 +86,11 @@ public class CsvWriter {
 
 
     /**
-     *
-     * @param object List Object
+     * @param object            List Object
      * @param emptyPlaceHolders Boolean flag determining whether to add [] when a list is empty.
      * @return
      */
-    private static String extractListValues(Object object, boolean emptyPlaceHolders) {
+    private String extractListValues(Object object, boolean emptyPlaceHolders) {
 
         if (!Optional.ofNullable(object).isPresent()) {
             return emptyPlaceHolders ? "[]" : "";
@@ -109,14 +103,14 @@ public class CsvWriter {
             stringBuilder.append(mapObject(iterator.next(), emptyPlaceHolders));
             stringBuilder.append("]");
             if (iterator.hasNext()) {
-                stringBuilder.append(delimiter);
+                stringBuilder.append(getDelimiter());
             }
         }
         return stringBuilder.toString();
     }
 
 
-    private static String extractValueFromField(Field field, Object sourceObject, boolean emptyPlaceHolders) throws ConversionException {
+    private String extractValueFromField(Field field, Object sourceObject, boolean emptyPlaceHolders) throws ConversionException {
         try {
             ReflectionUtils.makeAccessible(field);
             Object fieldValueToMap = field.get(sourceObject);
@@ -139,12 +133,17 @@ public class CsvWriter {
         }
     }
 
-    private static String extractValueFromTypeMappers(Object object) throws NoTypeMapperFoundException {
+    private String extractValueFromTypeMappers(Object object) throws NoTypeMapperFoundException {
         if (Optional.ofNullable(object).isPresent()) {
-            TypeMapper mapper = typeMappers.get(object.getClass());
+            TypeMapper mapper = getTypeMappers().get(object.getClass());
             //Use specified
             if (mapper == null) {
-                throw new NoTypeMapperFoundException("Unknown Type :" + object.getClass());
+                if (object.getClass().getSuperclass() != null) {
+                    mapper = getTypeMappers().get(object.getClass().getSuperclass());
+                }
+                if (mapper == null) {
+                    throw new NoTypeMapperFoundException("Unknown Type :" + object.getClass());
+                }
             }
             return mapper.toString(object);
         }
